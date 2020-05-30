@@ -5,7 +5,7 @@ venv/
 
 __pycache__/
 *.py[cod]
-
+migrations/
 .idea
 .DS_Store
 .AppleDouble
