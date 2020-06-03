@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.shortcuts import get_object_or_404
 
+
 from .models import Post, Comment, Group, Follow, User
 
 
@@ -40,7 +41,16 @@ class FollowSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ['id', 'user', 'following']
         read_only_fields = ['user']
+
         model = Follow
+
+    def validate(self, attrs):
+        following = get_object_or_404(User,
+                                      username=attrs['following']['username'])
+        user = self.context['request'].user
+        if Follow.objects.filter(user=user, following=following):
+            raise serializers.ValidationError('A non field error')
+        return attrs
 
     def create(self, validated_data):
         user = get_object_or_404(User, username=validated_data['user'])

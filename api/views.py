@@ -1,7 +1,7 @@
-from rest_framework import viewsets, filters, status
-from rest_framework.response import Response
+from rest_framework import viewsets, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
-from .models import Post, Comment, Group, Follow, User
+from .models import Post, Comment, Group, Follow
 from .permissions import IsOwnerOrReadOnly, IsUserOrReadOnly
 from .serializers import (
     PostSerializer,
@@ -15,16 +15,8 @@ class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsOwnerOrReadOnly]
-
-    def get_queryset(self):
-        queryset = Post.objects.all()
-
-        group = self.request.query_params.get('group', None)
-
-        if group is not None:
-            group = get_object_or_404(Group, id=group)
-            queryset = queryset.filter(group=group)
-        return queryset
+    filter_backends = [DjangoFilterBackend, ]
+    filterset_fields = ['group', ]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -60,15 +52,5 @@ class FollowViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['=following__username', '=user__username']
 
-    def create(self, request):
-        serializer = FollowSerializer(data=request.data)
-        if serializer.is_valid():
-            following = User.objects.get(
-                username=serializer.validated_data['following']['username'])
-            user = self.request.user
-            if Follow.objects.filter(user=user, following=following):
-                return Response(serializer.errors,
-                                status=status.HTTP_400_BAD_REQUEST)
-            serializer.save(user=self.request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
