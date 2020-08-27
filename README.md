@@ -1,2 +1,2 @@
 # api_final
-api final
+Это api сервис для созданного сайта yatube.
